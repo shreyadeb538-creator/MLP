@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MLP-Recover · MRF Operations Console</title>
+<style>
+:root{--bg:#f4f6f5;--card:#fff;--ink:#12261f;--mut:#5d6f67;--line:#dfe6e2;--pri:#0f6b4f;--pri2:#e3f2ec;--acc:#e8871e;--bad:#c0392b;--sh:0 1px 3px rgba(18,38,31,.08)}
+@media(prefers-color-scheme:dark){:root{--bg:#0e1714;--card:#16231e;--ink:#e8f1ed;--mut:#92a69d;--line:#27382f;--pri:#3fbf93;--pri2:#173a2e;--acc:#f0a04b}}
+*{box-sizing:border-box}body{margin:0;font:15px/1.5 system-ui,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+header{background:var(--pri);color:#fff;padding:12px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+header h1{font-size:18px;margin:0;flex:1}header small{opacity:.85;display:block;font-weight:400;font-size:12px}
+select,input,button{font:inherit;color:inherit}
+select,input{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:7px 10px}
+header select{color:#12261f}
+nav{display:flex;gap:4px;padding:10px 16px;overflow-x:auto;background:var(--card);border-bottom:1px solid var(--line)}
+nav button{border:0;background:none;padding:8px 14px;border-radius:8px;cursor:pointer;white-space:nowrap;color:var(--mut);font-weight:600}
+nav button.on{background:var(--pri2);color:var(--pri)}
+main{max-width:1100px;margin:0 auto;padding:18px}
+.banner{background:#fff4e0;color:#7a4a05;border:1px solid #f1d29b;border-radius:10px;padding:8px 12px;font-size:13px;margin-bottom:14px}
+@media(prefers-color-scheme:dark){.banner{background:#3a2b10;color:#f5d28f;border-color:#5b4420}}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:var(--sh)}
+.card h3{margin:0 0 8px;font-size:15px}.kpi b{display:block;font-size:28px;color:var(--pri)}.kpi span{color:var(--mut);font-size:13px}
+.btn{background:var(--pri);color:#fff;border:0;border-radius:8px;padding:9px 16px;cursor:pointer;font-weight:600}
+.btn.sec{background:var(--pri2);color:var(--pri)}.btn:focus-visible,nav button:focus-visible{outline:3px solid var(--acc)}
+table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line)}th{color:var(--mut);font-size:12px;text-transform:uppercase}
+.tbl{overflow-x:auto}.tag{padding:2px 9px;border-radius:99px;font-size:12px;font-weight:600;background:var(--pri2);color:var(--pri)}.tag.o{background:#fdebd3;color:#8a4b00}
+canvas{width:100%;border-radius:10px;background:#1c2a25;display:block}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:10px 0}.two{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));margin-top:14px}
+.bar{height:22px;border-radius:6px;background:var(--pri);color:#fff;font-size:12px;padding:2px 8px;margin:4px 0;white-space:nowrap}
+label{font-size:13px;color:var(--mut);display:block}.hidden{display:none}
+.stage{display:flex;gap:8px;flex-wrap:wrap}.stage div{flex:1;min-width:120px;background:var(--pri2);border-radius:10px;padding:10px;text-align:center;font-size:13px}
+</style></head><body>
+<header><h1>MLP-Recover<small>Multi-Layer Plastic recovery console · NESFIC-D-08 · Assam SBM(U)</small></h1>
+<select id="mrf" aria-label="Select MRF"></select></header>
+<nav id="nav"></nav>
+<main>
+<div class="banner"><b>Prototype notice:</b> all MRF data, prices and detection results are <b>simulated sample data</b>. No trained model or live MRF integration exists yet.</div>
+
+<section id="dash"></section>
+
+<section id="scan" class="hidden">
+<div class="card"><h3>1 · Identify — conveyor vision (simulated)</h3>
+<p style="color:var(--mut);margin-top:0">A camera above the sorting belt would classify each item; MLP (chip packets, sachets, laminates, Tetra Pak style cartons) triggers a diverter. Here, detections are scripted to demonstrate the workflow.</p>
+<canvas id="cv" width="900" height="260" aria-label="Simulated conveyor"></canvas>
+<div class="row"><button class="btn" id="run">▶ Start simulated belt</button><button class="btn sec" id="stop">Pause</button>
+<span id="cnt"></span></div></div>
+<div class="two"><div class="card"><h3>Item reference guide</h3><div class="tbl"><table id="ref"></table></div></div>
+<div class="card"><h3>Manual check (for pickers)</h3><label>Pick the item in your hand</label><select id="pick"></select><p id="pickout" style="font-size:16px"></p></div></div>
+</section>
+
+<section id="bat" class="hidden">
+<div class="card"><h3>2 · Bale ledger — traceability</h3>
+<div class="row"><input id="bw" type="number" min="1" placeholder="Weight (kg)" aria-label="Weight"><select id="bg" aria-label="Grade"><option>MLP – clean</option><option>MLP – mixed/dirty</option></select><button class="btn" id="addb">+ Log bale</button></div>
+<div class="tbl"><table><thead><tr><th>Bale ID</th><th>MRF</th><th>Grade</th><th>kg</th><th>Pathway</th><th>Status</th></tr></thead><tbody id="bt"></tbody></table></div></div>
+</section>
+
+<section id="path" class="hidden">
+<div class="card"><h3>3 · Recovery pathways & economics (editable assumptions)</h3>
+<p style="color:var(--mut);margin-top:0">Illustrative rates only — replace with quotes from local buyers. Compare ways to route a month's MLP.</p>
+<div class="row"><div><label>MLP processed / month (kg)</label><input id="vol" type="number" value="10000"></div>
+<div><label>Handling cost (₹/kg)</label><input id="hc" type="number" value="2" step="0.5"></div></div>
+<div class="tbl"><table><thead><tr><th>Pathway</th><th>Buyer / use</th><th>Rate ₹/kg</th><th>Share %</th><th>Net ₹</th></tr></thead><tbody id="pt"></tbody></table></div>
+<div id="bars"></div><p id="tot" class="kpi"></p></div>
+<div class="card" style="margin-top:14px"><h3>Process flow</h3><div class="stage"><div>Collect &amp; dry waste in</div><div>AI-assisted pick</div><div>Shred / bale</div><div>Route to pathway</div><div>Ledger &amp; report</div></div></div>
+</section>
+
+<section id="rep" class="hidden"><div class="card"><h3>4 · Monthly ULB report</h3><div id="repbody"></div><div class="row"><button class="btn" onclick="window.print()">Print / Save as PDF</button></div></div></section>
+</main>
+<script>
+const $=s=>document.querySelector(s);
+const MRFS=[{n:"Guwahati MRF – Boragaon",c:60,m:5200},{n:"Dibrugarh MRF",c:25,m:1900},{n:"Silchar MRF",c:20,m:1500},{n:"Jorhat MRF",c:15,m:1100},{n:"Tezpur MRF",c:15,m:900}];
+const ITEMS=[
+{k:"Chips / snack packet",mlp:1,col:"#e8871e",tip:"Metallised multi-layer. Divert to MLP bale."},
+{k:"Biscuit wrapper",mlp:1,col:"#c0392b",tip:"Laminate film. Divert to MLP bale."},
+{k:"Detergent / shampoo sachet",mlp:1,col:"#8e44ad",tip:"Small laminate. Divert to MLP bale."},
+{k:"Carton (paper-foil-PE)",mlp:1,col:"#2980b9",tip:"Layered carton. Divert to MLP bale."},
+{k:"PET bottle",mlp:0,col:"#7fb3d5",tip:"Mono-material. Send to PET line."},
+{k:"HDPE container",mlp:0,col:"#a9cce3",tip:"Mono-material. Send to HDPE line."},
+{k:"Corrugated cardboard",mlp:0,col:"#b08d57",tip:"Paper line."},
+{k:"Carry bag (LDPE)",mlp:0,col:"#d5dbdb",tip:"Mono film. Film line."}];
+const PATHS=[{n:"Cement kiln co-processing (RDF)",b:"Cement plant",r:4,s:50},{n:"Road construction (shredded)",b:"PWD / contractors",r:3,s:30},{n:"Pyrolysis / fuel oil",b:"Processor",r:5,s:20}];
+let mrf=0,bales=[{id:"B-0001",m:0,g:"MLP – clean",w:420,p:"Cement kiln (RDF)",s:"Dispatched"},{id:"B-0002",m:0,g:"MLP – mixed/dirty",w:380,p:"Road construction",s:"In storage"}];
+const tabs=[["dash","Dashboard"],["scan","Identify"],["bat","Bales"],["path","Pathways"],["rep","Report"]];
+$("#nav").innerHTML=tabs.map(t=>`<button data-t="${t[0]}">${t[1]}</button>`).join("");
+$("#mrf").innerHTML=MRFS.map((m,i)=>`<option value="${i}">${m.n}</option>`).join("");
+function show(t){tabs.forEach(x=>$("#"+x[0]).classList.toggle("hidden",x[0]!=t));document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on",b.dataset.t==t));if(t=="dash")dash();if(t=="rep")rep();if(t=="path")paths();}
+$("#nav").onclick=e=>e.target.dataset.t&&show(e.target.dataset.t);$("#mrf").onchange=e=>{mrf=+e.target.value;show(document.querySelector("nav .on").dataset.t)};
+const mine=()=>bales.filter(b=>b.m==mrf),kg=a=>a.reduce((s,b)=>s+b.w,0);
+function dash(){const m=MRFS[mrf],mlp=Math.round(m.m*.15);$("#dash").innerHTML=`<div class="grid">
+<div class="card kpi"><b>${m.c} TPD</b><span>Stated dry-waste capacity (sample)</span></div>
+<div class="card kpi"><b>${mlp.toLocaleString()} kg</b><span>MLP expected this month (sample)</span></div>
+<div class="card kpi"><b>${kg(mine()).toLocaleString()} kg</b><span>Logged in bale ledger</span></div>
+<div class="card kpi"><b>${mine().length}</b><span>Bales tracked</span></div></div>
+<div class="two"><div class="card"><h3>How it works</h3><ol style="margin:0;padding-left:18px"><li><b>Identify</b> MLP on the belt</li><li><b>Bale</b> and log with an ID</li><li><b>Route</b> to the best recovery pathway</li><li><b>Report</b> diversion from landfill</li></ol></div>
+<div class="card"><h3>Start here</h3><div class="row"><button class="btn" onclick="show('scan')">Run belt demo</button><button class="btn sec" onclick="show('path')">Open economics</button></div></div></div>`}
+function paths(){const v=+$("#vol").value||0,h=+$("#hc").value||0;$("#pt").innerHTML=PATHS.map((p,i)=>`<tr><td>${p.n}</td><td>${p.b}</td><td><input type="number" style="width:70px" value="${p.r}" data-i="${i}" data-f="r"></td><td><input type="number" style="width:70px" value="${p.s}" data-i="${i}" data-f="s"></td><td>${Math.round(v*p.s/100*(p.r-h)).toLocaleString()}</td></tr>`).join("");
+const net=PATHS.reduce((s,p)=>s+v*p.s/100*(p.r-h),0),sh=PATHS.reduce((s,p)=>s+p.s,0);$("#bars").innerHTML=PATHS.map(p=>`<div class="bar" style="width:${Math.max(8,p.s)}%">${p.n.split(" ")[0]} ${p.s}%</div>`).join("");
+$("#tot").innerHTML=`<b>₹${Math.round(net).toLocaleString()}</b><span>Net monthly value (illustrative)${sh!=100?" · ⚠ shares add to "+sh+"%, not 100%":""}</span>`}
+$("#pt").oninput=e=>{PATHS[e.target.dataset.i][e.target.dataset.f]=+e.target.value;paths()};$("#vol").oninput=$("#hc").oninput=paths;
+function bt(){$("#bt").innerHTML=mine().map(b=>`<tr><td>${b.id}</td><td>${MRFS[b.m].n.split(" ")[0]}</td><td>${b.g}</td><td>${b.w}</td><td>${b.p}</td><td><span class="tag ${b.s=="Dispatched"?"":"o"}">${b.s}</span></td></tr>`).join("")||"<tr><td colspan=6>No bales yet.</td></tr>"}
+$("#addb").onclick=()=>{const w=+$("#bw").value;if(w<=0){$("#bw").focus();return}const g=$("#bg").value;bales.push({id:"B-"+String(bales.length+1).padStart(4,"0"),m:mrf,g,w,p:g.includes("clean")?"Cement kiln (RDF)":"Road construction",s:"In storage"});$("#bw").value="";bt()};
+function rep(){const m=mine(),t=kg(m),d=kg(m.filter(b=>b.s=="Dispatched"));$("#repbody").innerHTML=`<p><b>${MRFS[mrf].n}</b> · Month: Nov 2026 (sample)</p><table><tr><th>Metric</th><th>Value</th></tr><tr><td>MLP baled</td><td>${t} kg</td></tr><tr><td>Dispatched to recovery</td><td>${d} kg</td></tr><tr><td>Diversion from landfill (of baled)</td><td>${t?Math.round(d/t*100):0}%</td></tr></table><p style="color:var(--mut);font-size:13px">Figures reflect only bales logged in this session.</p>`}
+// Identify
+$("#ref").innerHTML="<tr><th>Item</th><th>Class</th></tr>"+ITEMS.map(i=>`<tr><td>${i.k}</td><td><span class="tag ${i.mlp?"":"o"}">${i.mlp?"MLP":"Other"}</span></td></tr>`).join("");
+$("#pick").innerHTML="<option value=''>Select…</option>"+ITEMS.map((i,x)=>`<option value="${x}">${i.k}</option>`).join("");
+$("#pick").onchange=e=>{const i=ITEMS[e.target.value];$("#pickout").innerHTML=i?`<b>${i.mlp?"✅ MLP":"➡ Not MLP"}</b> — ${i.tip}`:""};
+const cv=$("#cv"),x=cv.getContext("2d");let objs=[],run=0,cm=0,co=0,tick=0;
+function spawn(){const i=ITEMS[Math.floor(Math.random()*ITEMS.length)];objs.push({i,x:-60,y:70+Math.random()*100,conf:Math.round(88+Math.random()*10),dv:0})}
+function frame(){if(!run)return;tick++;if(tick%45==0)spawn();x.clearRect(0,0,900,260);x.fillStyle="#2a3d35";x.fillRect(0,50,900,160);x.fillStyle="#fff8";x.font="12px sans-serif";x.fillText("Camera zone",350,44);x.strokeStyle="#3fbf93";x.setLineDash([6,4]);x.strokeRect(330,50,200,160);x.setLineDash([]);
+objs.forEach(o=>{o.x+=3;if(o.i.mlp&&o.x>560){o.y-=2.5;if(!o.dv){o.dv=1;cm++}}else if(o.x>560&&!o.dv){o.dv=1;co++}
+x.fillStyle=o.i.col;x.fillRect(o.x,o.y,46,34);if(o.x>330&&o.x<560){x.strokeStyle=o.i.mlp?"#3fbf93":"#e8871e";x.lineWidth=2;x.strokeRect(o.x-3,o.y-3,52,40);x.fillStyle=x.strokeStyle;x.font="bold 11px sans-serif";x.fillText((o.i.mlp?"MLP ":"other ")+o.conf+"%",o.x-3,o.y-7)}});
+x.lineWidth=1;objs=objs.filter(o=>o.x<920&&o.y>-40);x.fillStyle="#fff";x.font="12px sans-serif";x.fillText("▲ MLP diverter → MLP bale",560,40);$("#cnt").textContent=`MLP diverted: ${cm} · Other: ${co} (simulated)`;requestAnimationFrame(frame)}
+$("#run").onclick=()=>{if(!run){run=1;frame()}};$("#stop").onclick=()=>run=0;
+bt();show("dash");
+</script></body></html>
